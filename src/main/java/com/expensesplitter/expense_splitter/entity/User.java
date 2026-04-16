@@ -31,4 +31,5 @@ public class User {
 
     private boolean isDeleted = false;
 
+
 }

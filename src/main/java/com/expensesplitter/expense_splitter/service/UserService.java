@@ -3,6 +3,7 @@ package com.expensesplitter.expense_splitter.service;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+
 
     public User createUser(User user)  {
 
@@ -29,6 +33,7 @@ public class UserService {
             throw new RuntimeException("Email already exists");
         }
 
+        user.setPassword(encoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         return userRepository.save(user);
 
