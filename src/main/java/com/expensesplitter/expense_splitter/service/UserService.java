@@ -1,6 +1,8 @@
 package com.expensesplitter.expense_splitter.service;
 
 import com.expensesplitter.expense_splitter.entity.User;
+import com.expensesplitter.expense_splitter.exception.BadRequestException;
+import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,7 +32,7 @@ public class UserService {
                 return userRepository.save(existingUser);
             }
 
-            throw new RuntimeException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
         user.setPassword(encoder.encode(user.getPassword()));
@@ -49,18 +51,18 @@ public class UserService {
     public User getUserById(Long id) {
 
       User user = userRepository.findById(id)
-              .orElseThrow(() -> new RuntimeException("User Not found"));
+              .orElseThrow(() -> new ResourceNotFoundException("User Not found"));
 
-      if(user.isDeleted()) throw new RuntimeException("User is Deleted");
+      if(user.isDeleted()) throw new ResourceNotFoundException("User is Deleted");
 
       return user;
     }
 
     public User updateUser(Long id, User user) {
 
-        User user1 = userRepository.findById(id).orElseThrow(() ->new RuntimeException("User Not found"));
+        User user1 = userRepository.findById(id).orElseThrow(() ->new ResourceNotFoundException("User Not found"));
 
-        if(user1.isDeleted()) throw new RuntimeException("User is Deleted");
+        if(user1.isDeleted()) throw new ResourceNotFoundException("User is Deleted");
        user1.setName(user.getName());
        user1.setEmail(user.getEmail());
 
@@ -69,9 +71,9 @@ public class UserService {
 
     public User deleteById(Long id) {
         User user = userRepository.findById(id).
-                orElseThrow(() -> new RuntimeException("User Not found"));
+                orElseThrow(() -> new ResourceNotFoundException("User Not found"));
         if(user.isDeleted()){
-            throw new RuntimeException("User already deleted");
+            throw new ResourceNotFoundException("User already deleted");
         }
         user.setDeleted(true);
          userRepository.save(user);

@@ -6,6 +6,7 @@ import com.expensesplitter.expense_splitter.entity.Expense;
 import com.expensesplitter.expense_splitter.entity.ExpenseSplit;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.User;
+import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.repository.ExpenseRepository;
 import com.expensesplitter.expense_splitter.repository.ExpenseSplitRepository;
 import com.expensesplitter.expense_splitter.repository.GroupRepository;
@@ -39,9 +40,9 @@ public class BalanceService {
 
     private Map<User, Double> calculateBalance(Long groupId) {
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(()->new RuntimeException("Group Not Found"));
+                .orElseThrow(()->new ResourceNotFoundException("Group Not Found"));
 
-        if(group.isDeleted()) throw new RuntimeException("Group is Deleted");
+        if(group.isDeleted()) throw new ResourceNotFoundException("Group is Deleted");
 
         List<Expense> expenses = expenseRepository.findByGroup(group);
 
@@ -74,7 +75,7 @@ public class BalanceService {
     public Double getUserBalanceInGroup(Long groupId, Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(()-> new RuntimeException("User Not Found"));
+                .orElseThrow(()-> new ResourceNotFoundException("User Not Found"));
 
 
        Map<User,Double> map = calculateBalance(groupId);

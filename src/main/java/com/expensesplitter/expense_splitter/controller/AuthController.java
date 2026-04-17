@@ -6,6 +6,7 @@ import com.expensesplitter.expense_splitter.dto.RegisterRequest;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.service.AuthService;
 import com.expensesplitter.expense_splitter.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> signup(@Valid @RequestBody RegisterRequest request) {
         User newUser = new User();
         newUser.setName(request.getName());
         newUser.setEmail(request.getEmail());
@@ -38,7 +39,7 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
 
         String token = authService.login(request);
 

@@ -7,6 +7,8 @@ import com.expensesplitter.expense_splitter.entity.Expense;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.entity.User;
+import com.expensesplitter.expense_splitter.exception.BadRequestException;
+import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.repository.ExpenseRepository;
 import com.expensesplitter.expense_splitter.repository.GroupMemberRepository;
 import com.expensesplitter.expense_splitter.repository.GroupRepository;
@@ -44,25 +46,25 @@ public class ExpenseService {
         public Expense addExpense(Long groupId, Long userId, ExpenseRequest request) {
 
             Group group = groupRepository.findById(groupId)
-                    .orElseThrow(()-> new RuntimeException("Group Not Found"));
+                    .orElseThrow(()-> new ResourceNotFoundException("Group Not Found"));
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User Not Found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
 
             if(group.isDeleted()){
-                throw new RuntimeException("Group is deleted");
+                throw new ResourceNotFoundException("Group is deleted");
             }
 
             if(user.isDeleted()){
-                throw new RuntimeException("User is deleted");
+                throw new ResourceNotFoundException("User is deleted");
             }
 
             GroupMember member = groupMemberRepository.findByGroupAndUser(group,user)
-                    .orElseThrow(()-> new RuntimeException("Member Not found"));
-            if(member.isDeleted()) throw new RuntimeException("Member is Deleted");
+                    .orElseThrow(()-> new ResourceNotFoundException("Member Not found"));
+            if(member.isDeleted()) throw new ResourceNotFoundException("Member is Deleted");
 
             if (!"EQUAL".equalsIgnoreCase(request.getSplitType()) &&
                     !"EXACT".equalsIgnoreCase(request.getSplitType())) {
-                throw new RuntimeException("Invalid split type");
+                throw new BadRequestException("Invalid split type");
             }
 
 
@@ -72,7 +74,7 @@ public class ExpenseService {
 
             if("EXACT".equalsIgnoreCase(request.getSplitType()) &&
                     members.size() != request.getSplits().size()) {
-                throw new RuntimeException("Splits size must match number of users in the group for EXACT type");
+                throw new BadRequestException("Splits size must match number of users in the group for EXACT type");
             }
 
             // ✅ VALIDATION FIRST
@@ -103,7 +105,7 @@ public class ExpenseService {
         if ("EXACT".equalsIgnoreCase(request.getSplitType())) {
 
             if (request.getSplits() == null || request.getSplits().isEmpty()) {
-                throw new RuntimeException("Splits required for EXACT type");
+                throw new BadRequestException("Splits required for EXACT type");
             }
 
             Set<Long> userIds = new HashSet<>();
@@ -113,33 +115,33 @@ public class ExpenseService {
 
                 // ❗ Duplicate user check
                 if (!userIds.add(s.getUserId())) {
-                    throw new RuntimeException("Duplicate user in splits: " + s.getUserId());
+                    throw new BadRequestException("Duplicate user in splits: " + s.getUserId());
                 }
 
                 // ❗ Amount validation
                 if (s.getAmount() == null || s.getAmount() <= 0) {
-                    throw new RuntimeException("Invalid split amount for user: " + s.getUserId());
+                    throw new BadRequestException("Invalid split amount for user: " + s.getUserId());
                 }
 
                 // ❗ User exist check
                 User user = userRepository.findById(s.getUserId())
-                        .orElseThrow(() -> new RuntimeException("User not found: " + s.getUserId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found: " + s.getUserId()));
 
                 // ❗ Deleted user check
                 if (user.isDeleted()) {
-                    throw new RuntimeException("User is deleted: " + s.getUserId());
+                    throw new ResourceNotFoundException("User is deleted: " + s.getUserId());
                 }
 
                 // ❗ Group membership check
                 groupMemberRepository.findByGroupAndUser(group, user)
-                        .orElseThrow(() -> new RuntimeException("User is not member of group: " + s.getUserId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("User is not member of group: " + s.getUserId()));
 
                 sum += s.getAmount();
             }
 
             // ❗ Floating precision safe check
             if (Math.abs(sum - request.getAmount()) > 0.01) {
-                throw new RuntimeException("Split total must match expense amount");
+                throw new BadRequestException("Split total must match expense amount");
             }
         }
     }
@@ -148,9 +150,9 @@ public class ExpenseService {
     public List<Expense> getGroupExpenses(Long groupId) {
 
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(()-> new RuntimeException("Group Not Found"));
+                .orElseThrow(()-> new ResourceNotFoundException("Group Not Found"));
 
-        if(group.isDeleted()) throw new RuntimeException("Group is deleted");
+        if(group.isDeleted()) throw new ResourceNotFoundException("Group is deleted");
 
         return expenseRepository.findByGroupAndIsDeletedFalse(group);
 
@@ -159,9 +161,9 @@ public class ExpenseService {
     public Expense getExpenseById(Long expenseId) {
 
         Expense expense =  expenseRepository.findById(expenseId)
-                .orElseThrow(()-> new RuntimeException("Expense Not Found"));
+                .orElseThrow(()-> new ResourceNotFoundException("Expense Not Found"));
 
-        if(expense.isDeleted()) throw new RuntimeException("expense is deleted");
+        if(expense.isDeleted()) throw new ResourceNotFoundException("expense is deleted");
 
         return expense;
 
@@ -173,7 +175,7 @@ public class ExpenseService {
     public Expense deleteExpense(Long expenseId) {
 
             Expense expense = expenseRepository.findById(expenseId)
-                    .orElseThrow(()->new RuntimeException("Expense Not Found"));
+                    .orElseThrow(()->new ResourceNotFoundException("Expense Not Found"));
 
             expense.setDeleted(true);
              expenseRepository.save(expense);

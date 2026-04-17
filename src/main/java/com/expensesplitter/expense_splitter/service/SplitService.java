@@ -2,6 +2,8 @@ package com.expensesplitter.expense_splitter.service;
 
 import com.expensesplitter.expense_splitter.dto.SplitRequest;
 import com.expensesplitter.expense_splitter.entity.*;
+import com.expensesplitter.expense_splitter.exception.BadRequestException;
+import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,13 +33,13 @@ public class SplitService {
         else if ("EXACT".equalsIgnoreCase(expense.getSplitType())) {
 
             if (splits == null || splits.isEmpty()) {
-                throw new RuntimeException("Splits required for EXACT split type");
+                throw new BadRequestException("Splits required for EXACT split type");
             }
 
             exactSplit(expense, splits);
         }
         else {
-            throw new RuntimeException("Invalid split type");
+            throw new BadRequestException("Invalid split type");
         }
     }
 
@@ -48,7 +50,7 @@ public class SplitService {
         Group group = expense.getGroup();
 
         if(group.isDeleted()){
-            throw new RuntimeException("Group is deleted");
+            throw new ResourceNotFoundException("Group is deleted");
         }
 
         List<GroupMember> members = groupMemberRepository
@@ -59,7 +61,7 @@ public class SplitService {
 
         // Check Members is not 0
         if(totalMembers == 0){
-            throw new RuntimeException("No members in group");
+            throw new ResourceNotFoundException("No members in group");
         }
 
         double share = amount / totalMembers;
@@ -86,19 +88,19 @@ public class SplitService {
         }
 
         if(Math.abs(sum - totalAmount) > 0.01){
-            throw new RuntimeException("Split amount do not match Expense amount");
+            throw new BadRequestException("Split amount do not match Expense amount");
         }
 
         for(SplitRequest split:splits) {
             User user = userRepository.findById(split.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User Not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("User Not found"));
 
             if (user.isDeleted()) {
-                throw new RuntimeException("User is deleted: " + user.getId());
+                throw new BadRequestException("User is deleted: " + user.getId());
             }
            GroupMember member =  groupMemberRepository.findByGroupAndUser(expense.getGroup(), user)
-                    .orElseThrow(() -> new RuntimeException("User not in group"));
-            if(member.isDeleted()) throw new RuntimeException("Member not in Group");
+                    .orElseThrow(() -> new ResourceNotFoundException("User not in group"));
+            if(member.isDeleted()) throw new ResourceNotFoundException("Member not in Group");
 
             ExpenseSplit expenseSplit = new ExpenseSplit();
 
@@ -114,10 +116,10 @@ public class SplitService {
 
     public List<ExpenseSplit> getExpenseSplits(Long expenseId) {
         Expense expense = expenseRepository.findById(expenseId)
-                .orElseThrow(() -> new RuntimeException("Expense Not Found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Expense Not Found"));
 
         if (expense.isDeleted()) {
-            throw new RuntimeException("Expense Not Found");
+            throw new ResourceNotFoundException("Expense Not Found");
         }
 
         return expenseSplitRepository.findByExpense(expense);

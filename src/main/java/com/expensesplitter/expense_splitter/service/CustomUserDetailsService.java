@@ -1,6 +1,7 @@
 package com.expensesplitter.expense_splitter.service;
 
 import com.expensesplitter.expense_splitter.entity.User;
+import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,7 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         User user = userRepository.findByEmail(email);
         if(user == null){
-            throw new UsernameNotFoundException("User not found");
+            throw new ResourceNotFoundException("User not found");
         }
 
         return new org.springframework.security.core.userdetails.User(
