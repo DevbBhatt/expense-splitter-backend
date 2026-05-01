@@ -1,5 +1,6 @@
 package com.expensesplitter.expense_splitter.controller;
 
+import com.expensesplitter.expense_splitter.dto.ApiResponse;
 import com.expensesplitter.expense_splitter.dto.AuthResponse;
 import com.expensesplitter.expense_splitter.dto.LoginRequest;
 import com.expensesplitter.expense_splitter.dto.RegisterRequest;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,7 +37,15 @@ public class AuthController {
 
         // Ab is newUser ko service mein pass karein
         userService.createUser(newUser);
-        return ResponseEntity.status(HttpStatus.OK).body("User registered successfully");
+
+        ApiResponse<String> response = new ApiResponse<>(
+                "success",
+                "User registered successfully",
+                null,
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 
@@ -43,9 +54,12 @@ public class AuthController {
 
         String token = authService.login(request);
 
-        AuthResponse response = new AuthResponse();
-        response.setToken(token);
-        response.setMessage("Login successful");
+        ApiResponse<String> response = new ApiResponse<>(
+                "success",
+                "Login successful",
+                token,
+                LocalDateTime.now()
+        );
 
         return ResponseEntity.ok(response);
     }
