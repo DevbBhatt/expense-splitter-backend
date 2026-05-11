@@ -4,6 +4,7 @@ import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.service.GroupService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,9 +25,13 @@ public class GroupController {
 
 
     @GetMapping()
-    public List<Group> getAllGroups(){
-        return groupService.getAllGroups();
+    public Page<Group> getAllGroups(@RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "5") int size){
+
+        return groupService.getAllGroups(page,size);
     }
+
+
 
     @GetMapping("/{id}")
     public Group getGroupById(@PathVariable Long id){

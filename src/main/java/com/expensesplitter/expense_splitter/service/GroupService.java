@@ -9,6 +9,9 @@ import com.expensesplitter.expense_splitter.repository.GroupMemberRepository;
 import com.expensesplitter.expense_splitter.repository.GroupRepository;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -49,9 +52,9 @@ public class GroupService {
         return savedGroup;
     }
 
-    public List<Group> getAllGroups() {
-
-        return groupRepository.findByIsDeletedFalse();
+    public Page<Group> getAllGroups(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return groupRepository.findByIsDeletedFalse(pageable);
     }
 
     public Group getGroupById(Long id) {

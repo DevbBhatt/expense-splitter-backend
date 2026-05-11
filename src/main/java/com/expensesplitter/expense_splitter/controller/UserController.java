@@ -4,6 +4,7 @@ import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,13 +18,13 @@ public class UserController {
 
 
     @PostMapping()
-    public User createUser(@Valid @RequestBody User user) {
-       return userService.createUser(user);
-    }
+    public User createUser(@Valid @RequestBody User user) { return userService.createUser(user); }
 
     @GetMapping()
-    public List<User> getAllUsers(){
-        return userService.getAllUsers();
+    public Page<User> getAllUsers(@RequestParam(defaultValue = "0") int page,
+                                  @RequestParam(defaultValue = "5") int size){
+
+        return userService.getAllUsers(page,size);
     }
 
     @GetMapping("/{id}")

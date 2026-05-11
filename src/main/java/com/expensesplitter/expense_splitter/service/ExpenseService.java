@@ -15,6 +15,9 @@ import com.expensesplitter.expense_splitter.repository.GroupRepository;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -147,14 +150,16 @@ public class ExpenseService {
     }
 
 
-    public List<Expense> getGroupExpenses(Long groupId) {
+    public Page<Expense> getGroupExpenses(Long groupId,int page,int size) {
 
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(()-> new ResourceNotFoundException("Group Not Found"));
 
         if(group.isDeleted()) throw new ResourceNotFoundException("Group is deleted");
 
-        return expenseRepository.findByGroupAndIsDeletedFalse(group);
+        Pageable pageable = PageRequest.of(page,size);
+
+        return expenseRepository.findByGroupAndIsDeletedFalse(group,pageable);
 
     }
 

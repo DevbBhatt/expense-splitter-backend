@@ -7,6 +7,7 @@ import com.expensesplitter.expense_splitter.service.ExpenseService;
 import com.expensesplitter.expense_splitter.service.SplitService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +31,10 @@ public class ExpenseController {
 
 
     @GetMapping("/groups/{groupId}/expenses")
-    public List<Expense> getGroupExpenses(@PathVariable Long groupId){
-        return expenseService.getGroupExpenses(groupId);
+    public Page<Expense> getGroupExpenses(@PathVariable Long groupId,
+                                          @RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "5") int size){
+        return expenseService.getGroupExpenses(groupId,page,size);
     }
 
     @GetMapping("/{expenseId}")

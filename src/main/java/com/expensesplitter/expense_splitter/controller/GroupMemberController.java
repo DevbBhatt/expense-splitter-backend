@@ -3,6 +3,7 @@ package com.expensesplitter.expense_splitter.controller;
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.service.GroupMemberService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,8 +21,11 @@ public class GroupMemberController {
     }
 
     @GetMapping("members/{groupId}")
-    public List<GroupMember> getGroupMembers(@PathVariable Long groupId){
-        return groupMemberService.getGroupMembers(groupId);
+    public Page<GroupMember> getGroupMembers(@PathVariable Long groupId,
+                                             @RequestParam int page,
+                                             @RequestParam int size){
+
+        return groupMemberService.getGroupMembers(groupId,page,size);
     }
 
     @DeleteMapping("/{groupId}/members/{userId}")
