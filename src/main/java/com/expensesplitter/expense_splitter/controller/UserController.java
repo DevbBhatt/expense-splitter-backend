@@ -2,6 +2,7 @@ package com.expensesplitter.expense_splitter.controller;
 
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     @Autowired

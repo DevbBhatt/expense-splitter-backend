@@ -5,6 +5,7 @@ import com.expensesplitter.expense_splitter.entity.Expense;
 import com.expensesplitter.expense_splitter.entity.ExpenseSplit;
 import com.expensesplitter.expense_splitter.service.ExpenseService;
 import com.expensesplitter.expense_splitter.service.SplitService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/expenses")
+@SecurityRequirement(name = "bearerAuth")
 public class ExpenseController {
 
     @Autowired

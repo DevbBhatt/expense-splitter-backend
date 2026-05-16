@@ -3,6 +3,7 @@ package com.expensesplitter.expense_splitter.controller;
 import com.expensesplitter.expense_splitter.dto.SettlementDTO;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.service.BalanceService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/balances")
+@SecurityRequirement(name = "bearerAuth")
 public class BalanceController {
 
     @Autowired

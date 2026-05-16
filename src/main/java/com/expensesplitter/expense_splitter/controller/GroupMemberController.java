@@ -2,6 +2,7 @@ package com.expensesplitter.expense_splitter.controller;
 
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.service.GroupMemberService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/groups")
+@SecurityRequirement(name = "bearerAuth")
 public class GroupMemberController {
 
     @Autowired
@@ -22,8 +24,8 @@ public class GroupMemberController {
 
     @GetMapping("members/{groupId}")
     public Page<GroupMember> getGroupMembers(@PathVariable Long groupId,
-                                             @RequestParam int page,
-                                             @RequestParam int size){
+                                             @RequestParam(defaultValue = "0") int page,
+                                             @RequestParam(defaultValue = "5") int size){
 
         return groupMemberService.getGroupMembers(groupId,page,size);
     }
