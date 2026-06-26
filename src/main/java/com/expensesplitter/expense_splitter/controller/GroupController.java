@@ -1,5 +1,7 @@
 package com.expensesplitter.expense_splitter.controller;
 
+import com.expensesplitter.expense_splitter.dto.CreateGroupRequest;
+import com.expensesplitter.expense_splitter.dto.GroupResponse;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.service.GroupService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,37 +21,38 @@ public class GroupController {
     @Autowired
     private GroupService groupService;
 
-    @PostMapping()
-    public Group createGroup(@Valid @RequestBody Group group){
-
-        return groupService.createGroup(group);
+    @PostMapping
+    public GroupResponse createGroup(@Valid @RequestBody CreateGroupRequest request) {
+        return groupService.createGroup(request);
     }
 
 
-    @GetMapping()
-    public Page<Group> getAllGroups(@RequestParam(defaultValue = "0") int page,
-                                    @RequestParam(defaultValue = "5") int size){
+    @GetMapping
+    public Page<GroupResponse> getAllGroups(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size){
 
-        return groupService.getAllGroups(page,size);
+        return groupService.getAllGroups(page, size);
     }
 
 
 
     @GetMapping("/{id}")
-    public Group getGroupById(@PathVariable Long id){
+    public GroupResponse getGroupById(@PathVariable Long id){
         return groupService.getGroupById(id);
     }
 
     @PutMapping("/{id}")
-    public Group updateGroup(@Valid @PathVariable Long id,
-                             @RequestBody Group group){
+    public GroupResponse updateGroup(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateGroupRequest request){
 
-       return groupService.updateGroup(id,group);
+        return groupService.updateGroup(id, request);
     }
+
 
     @DeleteMapping("/{id}")
-    public Group deleteGroup(@PathVariable Long id){
+    public GroupResponse deleteGroup(@PathVariable Long id){
         return groupService.deleteGroup(id);
     }
-
 }

@@ -1,10 +1,14 @@
 package com.expensesplitter.expense_splitter.service;
 
 
+import com.expensesplitter.expense_splitter.dto.CreateGroupRequest;
+import com.expensesplitter.expense_splitter.dto.GroupResponse;
+import com.expensesplitter.expense_splitter.dto.UserResponse;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
+import com.expensesplitter.expense_splitter.mapper.GroupMapper;
 import com.expensesplitter.expense_splitter.repository.GroupMemberRepository;
 import com.expensesplitter.expense_splitter.repository.GroupRepository;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
@@ -12,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,15 +35,21 @@ public class GroupService {
     @Autowired
     private GroupMemberRepository groupMemberRepository;
 
+    @Autowired
+    private GroupMapper groupMapper;
 
-    public Group createGroup(Group group) {
+    @Autowired
+    private CurrentUserService currentUserService;
 
-        User user = userRepository.findById(group.getCreatedBy().getId())
-                .orElseThrow(()-> new ResourceNotFoundException("User Not Found"));
 
-        if(user.isDeleted()) throw new ResourceNotFoundException("User is Deleted");
+    public GroupResponse createGroup(CreateGroupRequest request) {
 
-        group.setCreatedBy(user);    // optional
+        User user = currentUserService.getCurrentUser();
+
+        Group group = new Group();
+
+        group.setName(request.getName());
+        group.setCreatedBy(user);
         group.setCreatedAt(LocalDateTime.now());
 
 
@@ -49,53 +61,71 @@ public class GroupService {
         member.setJoinedAt(LocalDateTime.now());
 
         groupMemberRepository.save(member);
-        return savedGroup;
+
+        return groupMapper.toResponse(savedGroup);
     }
 
-    public Page<Group> getAllGroups(int page, int size) {
+    public Page<GroupResponse> getAllGroups(int page, int size) {
+
         Pageable pageable = PageRequest.of(page, size);
-        return groupRepository.findByIsDeletedFalse(pageable);
+
+        Page<Group> groups = groupRepository.findByIsDeletedFalse(pageable);
+
+        return groups.map(groupMapper::toResponse);
     }
 
-    public Group getGroupById(Long id) {
-        Group group =  groupRepository.findById(id).
-                orElseThrow(()-> new ResourceNotFoundException("Group Not Found"));
+    public GroupResponse getGroupById(Long id) {
 
-        if(group.isDeleted()) {
+        Group group = groupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Group Not Found"));
+
+        if(group.isDeleted()){
             throw new ResourceNotFoundException("Group is Deleted");
         }
 
-        return group;
+        return groupMapper.toResponse(group);
     }
 
-    public Group updateGroup(Long id, Group group) {
-        Group group1 = groupRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Group Not Found"));
+    public GroupResponse updateGroup(Long id, CreateGroupRequest request) {
 
-        if(group1.isDeleted()) throw new ResourceNotFoundException("Group Not Found");
-
-        group1.setName(group.getName());
-        return groupRepository.save(group1);
-    }
-
-    public Group deleteGroup(Long id) {
         Group group = groupRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Group Not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Group Not Found"));
+
+        if(group.isDeleted()){
+            throw new ResourceNotFoundException("Group is Deleted");
+        }
+
+        group.setName(request.getName());
+
+        Group updatedGroup = groupRepository.save(group);
+
+        return groupMapper.toResponse(updatedGroup);
+    }
+
+
+    public GroupResponse deleteGroup(Long id) {
+
+        Group group = groupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Group Not Found"));
+
         if(group.isDeleted()){
             throw new ResourceNotFoundException("Group already deleted");
         }
 
         List<GroupMember> members = groupMemberRepository.findByGroup(group);
 
-        for (GroupMember m : members) {
-            m.setDeleted(true);
+        for(GroupMember member : members){
+            member.setDeleted(true);
         }
 
         groupMemberRepository.saveAll(members);
 
         group.setDeleted(true);
-        groupRepository.save(group);
-        return group;
 
+        Group deletedGroup = groupRepository.save(group);
+
+        return groupMapper.toResponse(deletedGroup);
     }
+
+
 }
