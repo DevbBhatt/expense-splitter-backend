@@ -1,16 +1,16 @@
 package com.expensesplitter.expense_splitter.service;
 
 
+import com.expensesplitter.expense_splitter.dto.BalanceResponse;
 import com.expensesplitter.expense_splitter.dto.SettlementDTO;
+import com.expensesplitter.expense_splitter.dto.UserBalanceSummaryResponse;
 import com.expensesplitter.expense_splitter.entity.Expense;
 import com.expensesplitter.expense_splitter.entity.ExpenseSplit;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.User;
+import com.expensesplitter.expense_splitter.exception.BadRequestException;
 import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
-import com.expensesplitter.expense_splitter.repository.ExpenseRepository;
-import com.expensesplitter.expense_splitter.repository.ExpenseSplitRepository;
-import com.expensesplitter.expense_splitter.repository.GroupRepository;
-import com.expensesplitter.expense_splitter.repository.UserRepository;
+import com.expensesplitter.expense_splitter.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,9 +33,66 @@ public class BalanceService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CurrentUserService currentUserService;
 
-    public Map<User,Double> getGroupBalance(Long groupId) {
-        return calculateBalance(groupId);
+    @Autowired
+    private GroupMemberRepository groupMemberRepository;
+
+    public List<UserBalanceSummaryResponse> getMyBalances() {
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        List<Group> groups = groupRepository.findByIsDeletedFalse();
+
+        List<UserBalanceSummaryResponse> response = new ArrayList<>();
+
+        for (Group group : groups) {
+
+            boolean isMember = groupMemberRepository
+                    .existsByGroupIdAndUserId(group.getId(), currentUser.getId());
+
+            if (!isMember) {
+                continue;
+            }
+
+            Map<User, Double> balances = calculateBalance(group.getId());
+
+            UserBalanceSummaryResponse dto = new UserBalanceSummaryResponse();
+
+            dto.setGroupName(group.getName());
+
+            dto.setBalance(
+                    balances.getOrDefault(currentUser, 0D)
+            );
+
+            response.add(dto);
+
+        }
+
+        return response;
+
+    }
+
+
+    public List<BalanceResponse> getGroupBalance(Long groupId) {
+
+        Map<User, Double> balances = calculateBalance(groupId);
+
+        List<BalanceResponse> response = new ArrayList<>();
+
+        for (Map.Entry<User, Double> entry : balances.entrySet()) {
+
+            BalanceResponse dto = new BalanceResponse();
+
+            dto.setUserId(entry.getKey().getId());
+            dto.setUserName(entry.getKey().getName());
+            dto.setBalance(entry.getValue());
+
+            response.add(dto);
+        }
+
+        return response;
     }
 
     private Map<User, Double> calculateBalance(Long groupId) {
@@ -44,6 +101,16 @@ public class BalanceService {
 
         if(group.isDeleted()) throw new ResourceNotFoundException("Group is Deleted");
 
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        boolean isMember = groupMemberRepository
+                .existsByGroupIdAndUserId(groupId, currentUser.getId());
+
+        if (!isMember) {
+            throw new BadRequestException("You are not a member of this group");
+        }
+
         List<Expense> expenses = expenseRepository.findByGroup(group);
 
         Map<User,Double> map = new HashMap<>();
@@ -51,6 +118,7 @@ public class BalanceService {
         for(Expense expense:expenses){
 
             if(expense.isDeleted()) continue;
+
         List<ExpenseSplit> expenseSplits = expenseSplitRepository.findByExpense(expense);
 
             User user = expense.getPaidBy();
@@ -60,12 +128,10 @@ public class BalanceService {
             else map.put(user,totalAmount);
 
         for(ExpenseSplit expenseSplit:expenseSplits){
-
             User user1 = expenseSplit.getUser();
             Double amount = expenseSplit.getAmount();
             map.put(user1, map.getOrDefault(user1, 0D) - amount);
-
-        }
+          }
         }
 
         return map;

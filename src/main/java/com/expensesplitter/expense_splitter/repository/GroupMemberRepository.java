@@ -24,4 +24,9 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember,Long> {
     Page<GroupMember> findByGroupAndIsDeletedFalseAndUser_IsDeletedFalse(Group group, Pageable pageable);
 
     Optional<GroupMember> findByGroupIdAndUserId(Long groupId, Long userId);
+
+    Page<GroupMember> findByUserAndIsDeletedFalseAndGroup_IsDeletedFalse(
+            User user,
+            Pageable pageable
+    );
 }

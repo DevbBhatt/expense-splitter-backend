@@ -11,4 +11,5 @@ import java.util.List;
 public interface GroupRepository extends JpaRepository<Group,Long> {
 
     Page<Group> findByIsDeletedFalse(Pageable pageable);
+    List<Group> findByIsDeletedFalse();
 }

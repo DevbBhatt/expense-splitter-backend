@@ -1,5 +1,6 @@
 package com.expensesplitter.expense_splitter.controller;
 
+import com.expensesplitter.expense_splitter.dto.GroupMemberResponse;
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.service.GroupMemberService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -23,9 +24,9 @@ public class GroupMemberController {
     }
 
     @GetMapping("members/{groupId}")
-    public Page<GroupMember> getGroupMembers(@PathVariable Long groupId,
-                                             @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "5") int size){
+    public Page<GroupMemberResponse> getGroupMembers(@PathVariable Long groupId,
+                                                     @RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "5") int size){
 
         return groupMemberService.getGroupMembers(groupId,page,size);
     }

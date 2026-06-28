@@ -1,10 +1,12 @@
 package com.expensesplitter.expense_splitter.service;
 
+import com.expensesplitter.expense_splitter.dto.GroupMemberResponse;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.exception.BadRequestException;
 import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
+import com.expensesplitter.expense_splitter.mapper.GroupMemberMapper;
 import com.expensesplitter.expense_splitter.repository.GroupMemberRepository;
 import com.expensesplitter.expense_splitter.repository.GroupRepository;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
@@ -29,6 +31,12 @@ public class GroupMemberService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CurrentUserService currentUserService;
+
+    @Autowired
+    private GroupMemberMapper groupMemberMapper;
 
     public GroupMember addMemberToGroup(Long groupId, Long userId) {
         Group group = groupRepository.findById(groupId)
@@ -66,18 +74,29 @@ public class GroupMemberService {
     }
 
 
-    public Page<GroupMember> getGroupMembers(Long groupId,int page,int size) {
+    public Page<GroupMemberResponse> getGroupMembers(Long groupId, int page, int size) {
+
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(()->new ResourceNotFoundException("Group Not Found"));
-        if(group.isDeleted()) throw new ResourceNotFoundException("Group is Deleted");
+                .orElseThrow(() -> new ResourceNotFoundException("Group Not Found"));
+
+        if (group.isDeleted()) {
+            throw new ResourceNotFoundException("Group is Deleted");
+        }
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        boolean isMember = groupMemberRepository
+                .existsByGroupIdAndUserId(groupId, currentUser.getId());
+
+        if (!isMember) {
+            throw new BadRequestException("You are not a member of this group");
+        }
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return groupMemberRepository.findByGroupAndIsDeletedFalseAndUser_IsDeletedFalse(group,pageable);
-
-
-//        return groupMemberRepository.findByGroup(group)
-//                .stream().filter(m -> !m.isDeleted()).toList();
+        return groupMemberRepository
+                .findByGroupAndIsDeletedFalseAndUser_IsDeletedFalse(group, pageable)
+                .map(groupMemberMapper::toResponse);
     }
 
     public void removeMemberFromGroup(Long groupId,Long userId) {

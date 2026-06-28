@@ -7,6 +7,7 @@ import com.expensesplitter.expense_splitter.dto.UserResponse;
 import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.GroupMember;
 import com.expensesplitter.expense_splitter.entity.User;
+import com.expensesplitter.expense_splitter.exception.BadRequestException;
 import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.mapper.GroupMapper;
 import com.expensesplitter.expense_splitter.repository.GroupMemberRepository;
@@ -69,9 +70,17 @@ public class GroupService {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Group> groups = groupRepository.findByIsDeletedFalse(pageable);
+        User currentUser = currentUserService.getCurrentUser();
 
-        return groups.map(groupMapper::toResponse);
+        Page<GroupMember> groupMembers =
+                groupMemberRepository.findByUserAndIsDeletedFalseAndGroup_IsDeletedFalse(
+                        currentUser,
+                        pageable
+                );
+
+        return groupMembers.map(groupMember ->
+                groupMapper.toResponse(groupMember.getGroup())
+        );
     }
 
     public GroupResponse getGroupById(Long id) {
@@ -79,8 +88,18 @@ public class GroupService {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Group Not Found"));
 
-        if(group.isDeleted()){
+        if (group.isDeleted()) {
             throw new ResourceNotFoundException("Group is Deleted");
+        }
+
+        User currentUser = currentUserService.getCurrentUser();
+
+
+        boolean isMember = groupMemberRepository
+                .existsByGroupIdAndUserId(group.getId(), currentUser.getId());
+
+        if (!isMember) {
+            throw new BadRequestException("You are not a member of this group");
         }
 
         return groupMapper.toResponse(group);

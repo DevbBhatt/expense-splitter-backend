@@ -164,6 +164,15 @@ public class ExpenseService {
             throw new ResourceNotFoundException("Group is Deleted");
         }
 
+        User currentUser = currentUserService.getCurrentUser();
+
+        boolean isMember = groupMemberRepository
+                .existsByGroupIdAndUserId(group.getId(), currentUser.getId());
+
+        if (!isMember) {
+            throw new BadRequestException("You are not a member of this group");
+        }
+
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Expense> expenses =

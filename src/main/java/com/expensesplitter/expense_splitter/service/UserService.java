@@ -1,8 +1,10 @@
 package com.expensesplitter.expense_splitter.service;
 
+import com.expensesplitter.expense_splitter.dto.UserResponse;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.exception.BadRequestException;
 import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
+import com.expensesplitter.expense_splitter.mapper.UserMapper;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,10 +22,23 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private CurrentUserService currentUserService;
+
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
 
-    public User createUser(User user)  {
+    public UserResponse getCurrentUser() {
+        User currentUser = currentUserService.getCurrentUser();
+
+        return userMapper.toResponse(currentUser);
+
+    }
+
+    public UserResponse createUser(User user)  {
 
 
         User existingUser = userRepository.findByEmail(user.getEmail());
@@ -32,7 +47,10 @@ public class UserService {
 
             if(existingUser.isDeleted()){
                 existingUser.setDeleted(false);
-                return userRepository.save(existingUser);
+
+                User savedUser = userRepository.save(existingUser);
+
+                return userMapper.toResponse(savedUser);
             }
 
             throw new BadRequestException("Email already exists");
@@ -40,31 +58,38 @@ public class UserService {
 
         user.setPassword(encoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
-        return userRepository.save(user);
+
+        User savedUser = userRepository.save(user);
+
+        return userMapper.toResponse(savedUser);
 
 
     }
 
 
-    public Page<User> getAllUsers(int page,int size) {
+    public Page<UserResponse> getAllUsers(int page, int size) {
 
-        Pageable pageable = PageRequest.of(page,size);
+        Pageable pageable = PageRequest.of(page, size);
 
-        return userRepository.findByIsDeletedFalse(pageable);
+        return userRepository
+                .findByIsDeletedFalse(pageable)
+                .map(userMapper::toResponse);
     }
 
 
-    public User getUserById(Long id) {
+    public UserResponse getUserById(Long id) {
 
-      User user = userRepository.findById(id)
-              .orElseThrow(() -> new ResourceNotFoundException("User Not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User Not found"));
 
-      if(user.isDeleted()) throw new ResourceNotFoundException("User is Deleted");
+        if(user.isDeleted()) {
+            throw new ResourceNotFoundException("User is Deleted");
+        }
 
-      return user;
+        return userMapper.toResponse(user);
     }
 
-    public User updateUser(Long id, User user) {
+    public UserResponse updateUser(Long id, User user) {
 
         User user1 = userRepository.findById(id).orElseThrow(() ->new ResourceNotFoundException("User Not found"));
 
@@ -72,17 +97,21 @@ public class UserService {
        user1.setName(user.getName());
        user1.setEmail(user.getEmail());
 
-       return userRepository.save(user1);
+        User updatedUser = userRepository.save(user1);
+        return userMapper.toResponse(updatedUser);
     }
 
-    public User deleteById(Long id) {
+    public UserResponse deleteById(Long id) {
         User user = userRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("User Not found"));
         if(user.isDeleted()){
             throw new ResourceNotFoundException("User already deleted");
         }
         user.setDeleted(true);
-         userRepository.save(user);
-         return user;
+        User deletedUser = userRepository.save(user);
+
+        return userMapper.toResponse(deletedUser);
     }
+
+
 }
