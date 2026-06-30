@@ -3,6 +3,7 @@ package com.expensesplitter.expense_splitter.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 public class SplitRequest {
 
@@ -10,7 +11,7 @@ public class SplitRequest {
     private Long userId;
 
     @NotNull(message = "Amount is required")
-    @Positive(message = "Split amount must be positive")
+    @PositiveOrZero(message = "Split amount cannot be negative")
     private Double amount;
 
 

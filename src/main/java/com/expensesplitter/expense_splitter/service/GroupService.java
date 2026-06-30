@@ -96,7 +96,10 @@ public class GroupService {
 
 
         boolean isMember = groupMemberRepository
-                .existsByGroupIdAndUserId(group.getId(), currentUser.getId());
+                .existsByGroupIdAndUserIdAndIsDeletedFalse(
+                        group.getId(),
+                        currentUser.getId()
+                );
 
         if (!isMember) {
             throw new BadRequestException("You are not a member of this group");
@@ -131,7 +134,13 @@ public class GroupService {
             throw new ResourceNotFoundException("Group already deleted");
         }
 
-        List<GroupMember> members = groupMemberRepository.findByGroup(group);
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (!group.getCreatedBy().getId().equals(currentUser.getId())) {
+            throw new BadRequestException("Only group creator can delete the group");
+        }
+
+        List<GroupMember> members = groupMemberRepository.findByGroupAndIsDeletedFalseAndUser_IsDeletedFalse(group);
 
         for(GroupMember member : members){
             member.setDeleted(true);

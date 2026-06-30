@@ -43,6 +43,12 @@ public class GroupMemberService {
                 .orElseThrow(()-> new ResourceNotFoundException("Group Not Found"));
         if(group.isDeleted()) throw new ResourceNotFoundException("Group is deleted");
 
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (!group.getCreatedBy().getId().equals(currentUser.getId())) {
+            throw new BadRequestException("Only group creator can add members");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new ResourceNotFoundException("User Not Found"));
         if(user.isDeleted()) throw new ResourceNotFoundException("User is deleted");
@@ -105,6 +111,17 @@ public class GroupMemberService {
                 .orElseThrow(()->new ResourceNotFoundException("Group Not Found"));
 
         if(group.isDeleted()) throw new ResourceNotFoundException("Group is Deleted");
+
+        User currentUser = currentUserService.getCurrentUser();
+
+
+        if (!group.getCreatedBy().getId().equals(currentUser.getId())) {
+            throw new BadRequestException("Only group creator can remove members");
+        }
+
+        if (group.getCreatedBy().getId().equals(userId)) {
+            throw new BadRequestException("Group creator cannot be removed");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new ResourceNotFoundException("User Not Found"));

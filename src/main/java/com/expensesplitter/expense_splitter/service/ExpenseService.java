@@ -127,7 +127,7 @@ public class ExpenseService {
                 }
 
                 // ❗ Amount validation
-                if (s.getAmount() == null || s.getAmount() <= 0) {
+                if (s.getAmount() == null || s.getAmount() < 0) {
                     throw new BadRequestException("Invalid split amount for user: " + s.getUserId());
                 }
 
@@ -203,6 +203,18 @@ public class ExpenseService {
 
         if (expense.isDeleted()) {
             throw new ResourceNotFoundException("Expense already deleted");
+        }
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        boolean isMember = groupMemberRepository
+                .existsByGroupIdAndUserIdAndIsDeletedFalse(
+                        expense.getGroup().getId(),
+                        currentUser.getId()
+                );
+
+        if (!isMember) {
+            throw new BadRequestException("You are not a member of this group");
         }
 
         expense.setDeleted(true);

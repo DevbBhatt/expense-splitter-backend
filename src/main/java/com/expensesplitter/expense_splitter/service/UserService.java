@@ -1,10 +1,12 @@
 package com.expensesplitter.expense_splitter.service;
 
 import com.expensesplitter.expense_splitter.dto.UserResponse;
+import com.expensesplitter.expense_splitter.entity.Group;
 import com.expensesplitter.expense_splitter.entity.User;
 import com.expensesplitter.expense_splitter.exception.BadRequestException;
 import com.expensesplitter.expense_splitter.exception.ResourceNotFoundException;
 import com.expensesplitter.expense_splitter.mapper.UserMapper;
+import com.expensesplitter.expense_splitter.repository.GroupRepository;
 import com.expensesplitter.expense_splitter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,9 @@ public class UserService {
 
     @Autowired
     private CurrentUserService currentUserService;
+
+    @Autowired
+    private GroupRepository groupRepository;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -91,9 +96,17 @@ public class UserService {
 
     public UserResponse updateUser(Long id, User user) {
 
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (!currentUser.getId().equals(id)) {
+            throw new BadRequestException("You can update only your own profile");
+        }
+
+
         User user1 = userRepository.findById(id).orElseThrow(() ->new ResourceNotFoundException("User Not found"));
 
         if(user1.isDeleted()) throw new ResourceNotFoundException("User is Deleted");
+
        user1.setName(user.getName());
        user1.setEmail(user.getEmail());
 
@@ -102,11 +115,29 @@ public class UserService {
     }
 
     public UserResponse deleteById(Long id) {
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (!currentUser.getId().equals(id)) {
+            throw new BadRequestException("You can delete only your own account");
+        }
+
+        List<Group> activeGroups = groupRepository
+                .findByCreatedByAndIsDeletedFalse(currentUser);
+
+        if (!activeGroups.isEmpty()) {
+            throw new BadRequestException(
+                    "You are the creator of active groups. Delete those groups first."
+            );
+        }
+
         User user = userRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("User Not found"));
         if(user.isDeleted()){
             throw new ResourceNotFoundException("User already deleted");
         }
+
+
         user.setDeleted(true);
         User deletedUser = userRepository.save(user);
 
